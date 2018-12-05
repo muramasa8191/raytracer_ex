@@ -16,6 +16,8 @@ defmodule RaytracerEx do
     :world
   end
 
+  alias RaytracerEx.Vector.Vec3, as: Vec3
+  alias RaytracerEx.Camera, as: Camera
   def test(w, h) do
     _test(h, w, h, [])
   end
@@ -27,7 +29,7 @@ defmodule RaytracerEx do
     List.duplicate([], width)
     |> Enum.reduce({0, []}, fn (_x, {idx, arr}) -> {idx + 1, [[idx / width * 255, y / height * 255, 127]]++arr} end)
 
-    _test(y - 1, width, height, [array]++arr)
+    _test(y - 1, width, height, [Enum.reverse(array)]++arr)
   end
   def show_color(w, h, r, g, b) do
     arr = List.duplicate(List.duplicate([r, g, b], w), h)
@@ -36,6 +38,19 @@ defmodule RaytracerEx do
     :python.call( py_exec, :image, :show, [arr] )
     :python.stop( py_exec )
 
+  end
+
+  def gradation() do
+    camera = %Camera{}
+  end
+  defp _gradation(ray) do
+    d = Vec3.normalize(ray.dir)
+    t = 0.5 * (ray.dir.y + 1.0)
+
+    _lerp(%Vec3{x: 127, y: 179, z: 255 }, %Vec3{x: 255, y: 255, z: 255}, t)
+  end
+  defp _lerp(s, e, perc) do
+    Vec3.add(s, Vec3.scale(Vec3.sub(e, s), perc))
   end
   def show(arr) do
     { :ok, py_exec } = :python.start( [ python_path: 'lib' ] )
