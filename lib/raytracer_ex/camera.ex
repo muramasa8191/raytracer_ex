@@ -19,7 +19,7 @@ defmodule RaytracerEx.Camera do
     %Camera{pos: from, uvw: %{u: Vec3.scale(u, 2.0 * half_w), v: Vec3.scale(v, 2.0 * half_h), w: w2}}
   end
 
-  def getRay(camera, u, v) do
+  def get_ray(camera, u, v) do
     dir = Vec3.add(camera.uvw[:w], Vec3.scale(camera.uvw[:u], u))
     dir = Vec3.add(dir, Vec3.scale(camera.uvw[:v], v))
     dir = Vec3.sub(dir, camera.pos)
