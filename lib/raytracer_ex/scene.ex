@@ -5,7 +5,7 @@ defmodule RaytracerEx.Scene do
   alias RaytracerEx.Sphere, as: Sphere
   alias RaytracerEx.Camera, as: Camera
   
-  defstruct nx: 200, ny: 100, camera: %Camera{}, objects: []
+  defstruct nx: 200, ny: 100, ns: 100, camera: %Camera{}, objects: []
 
   def create_scene(nx, ny, camera) do
     %Scene{nx: nx, ny: ny, camera: camera, objects: []}
@@ -18,37 +18,65 @@ defmodule RaytracerEx.Scene do
     %Scene{scene | objects: [obj]++scene.objects}
   end
   def render(scene) do
+    s = NaiveDateTime.utc_now()  
     img =
-    0..scene.ny-1
-    |> Enum.map(fn y ->
+    scene.ny-1..0
+    |> Enum.to_list
+    |> Flow.from_enumerable(max_demand: 2)
+    |> Flow.map(fn y->
+      row = 
       0..scene.nx-1
         |> Enum.map(fn x ->
-          u = x / scene.nx
-          v = y / scene.ny
-          ray = Camera.get_ray(scene.camera, u, v)
-          sphere = hd scene.objects
-          h = Sphere.hit(sphere, ray)
-          if h > 0.0 do
-            norm = Vec3.normalize(Vec3.sub(Ray.at(ray, h), sphere.center))
-            color = Vec3.scale(Vec3.add(norm, %Vec3{x: 1.0, y: 1.0, z: 1.0}), 127.5)
-            [color.x, color.y, color.z]
-          else
-            _sky(ray)
-          end
+          color =
+          1..scene.ns
+          |> Enum.reduce(%Vec3{}, fn (_x, c) ->
+            u = (x + :rand.uniform()) / scene.nx
+            v = (y + :rand.uniform()) / scene.ny
+            ray = Camera.get_ray(scene.camera, u, v)
+            Vec3.add(c, _color(ray, scene.objects))
+          end)
+          Vec3.to_list(Vec3.div(color, scene.ns)) |> Enum.map(&(:math.sqrt(&1) * 255))
         end)
+      {y, row}
       end)
+    |> Enum.sort(&(elem(&1, 0) > elem(&2, 0)))
+    |> Enum.map(&elem(&1, 1))
     { :ok, py_exec } = :python.start( [ python_path: 'lib' ] )
     :python.call( py_exec, :image, :show, [img] )
     :python.stop( py_exec )
+
+    e = NaiveDateTime.utc_now()
+    IO.puts("render :#{NaiveDateTime.diff(e, s, :millisecond)} msec")
+  end
+  defp _color(ray, objects) do
+    hit = _hit(objects, ray, 0.0001, 99999)
+    if hit != [] do
+      obj = hd hit
+      target = Vec3.add(Vec3.add(obj.pos, obj.normal), Ray.random_in_unit_sphere())
+      Vec3.scale(_color(%Ray{pos: obj.pos, dir: Vec3.sub(target, obj.pos)}, objects), 0.5)
+    else
+      _sky(ray)
+    end
   end
   defp _sky(ray) do
     d = Vec3.normalize(ray.dir)
     t = 0.5 * (d.y + 1.0)
 
-    _lerp(%Vec3{x: 127, y: 179, z: 255 }, %Vec3{x: 255, y: 255, z: 255}, t)
+    _lerp(%Vec3{x: 0.5, y: 0.7, z: 1.0 }, %Vec3{x: 1.0, y: 1.0, z: 1.0}, t)
   end
   defp _lerp(s, e, perc) do
-    vec3 = Vec3.add(s, Vec3.scale(Vec3.sub(e, s), perc))
-    [vec3.x, vec3.y, vec3.z]
+    Vec3.add(Vec3.scale(s, perc), Vec3.scale(e, 1.0 - perc))
+  end
+  defp _hit(objects, ray, t_min, t_max) do
+    objects
+    |> Enum.map(fn obj ->
+      case obj.type do
+        :sphere -> Sphere.hit(obj, ray, t_min, t_max)
+      end
+    end)
+    |> Enum.filter(&(elem(&1, 0)))
+    |> Enum.sort(&(elem(&1, 1).t < elem(&2, 1).t))
+    |> Enum.take(1)
+    |> Enum.map(&(elem(&1, 1)))
   end
 end
