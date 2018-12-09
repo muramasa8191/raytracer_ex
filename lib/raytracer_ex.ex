@@ -21,6 +21,8 @@ defmodule RaytracerEx do
   alias RaytracerEx.Camera, as: Camera
   alias RaytracerEx.Sphere, as: Sphere
   alias RaytracerEx.Scene, as: Scene
+  alias RaytracerEx.Material.Lambertian, as: Lambertian
+  alias RaytracerEx.Material.Metal, as: Metal
 
   def test(w, h) do
     _test(h, w, h, [])
@@ -42,9 +44,24 @@ defmodule RaytracerEx do
     :python.call( py_exec, :image, :show, [arr] )
     :python.stop( py_exec )
   end
-  def scene_test2() do
+  def material_test() do
     nx = 200
     ny = 100
+    u = %Vec3{x: 4.0, y: 0.0, z: 0.0 }
+    v = %Vec3{x: 0.0, y: 2.0, z: 0.0 }
+    w = %Vec3{x: -2.0, y: -1.0, z: -1.0 }
+    camera = %Camera{uvw: %{u: u, v: v, w: w}}
+    sphere = %Sphere{center: %Vec3{x: 0.0, y: 0.0, z: -1.0}, r: 0.5, material: %Lambertian{albedo: Vec3.vec3([0.8, 0.3, 0.3])}}    
+    sphere2 = %Sphere{center: %Vec3{x: 0.0, y: -100.5, z: -1.0}, r: 100, material: %Lambertian{albedo: Vec3.vec3([0.8, 0.8, 0.0])}}    
+    sphere3 = %Sphere{center: %Vec3{x: 1.0, y: 0.0, z: -1.0}, r: 0.5, material: %Metal{albedo: Vec3.vec3([0.8, 0.6, 0.2])}}   
+    sphere4 = %Sphere{center: %Vec3{x: -1.0, y: 0.0, z: -1.0}, r: 0.5, material: %Metal{albedo: Vec3.vec3([0.8, 0.8, 0.8]), fuzz: 0.3}}    
+    scene = Scene.create_scene(nx, ny, camera, [sphere, sphere2, sphere3, sphere4])
+
+    Scene.render(scene)
+  end
+  def scene_test2() do
+    nx = 400
+    ny = 200
     u = %Vec3{x: 4.0, y: 0.0, z: 0.0 }
     v = %Vec3{x: 0.0, y: 2.0, z: 0.0 }
     w = %Vec3{x: -2.0, y: -1.0, z: -1.0 }
@@ -68,8 +85,8 @@ defmodule RaytracerEx do
     Scene.render(scene)
   end
   def sphere_shadow_test() do
-    nx = 200
-    ny = 100
+    nx = 400
+    ny = 200
     u = %Vec3{x: 4.0, y: 0.0, z: 0.0 }
     v = %Vec3{x: 0.0, y: 2.0, z: 0.0 }
     w = %Vec3{x: -2.0, y: -1.0, z: -1.0 }

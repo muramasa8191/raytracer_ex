@@ -4,6 +4,7 @@ defmodule RaytracerEx.Scene do
   alias RaytracerEx.Ray, as: Ray
   alias RaytracerEx.Sphere, as: Sphere
   alias RaytracerEx.Camera, as: Camera
+  alias RaytracerEx.Material, as: Material
   
   defstruct nx: 200, ny: 100, ns: 100, camera: %Camera{}, objects: []
 
@@ -18,6 +19,7 @@ defmodule RaytracerEx.Scene do
     %Scene{scene | objects: [obj]++scene.objects}
   end
   def render(scene) do
+    IO.puts("rendering start: nx=#{scene.nx}, ny=#{scene.ny}, ns=#{scene.ns}")
     s = NaiveDateTime.utc_now()  
     img =
     scene.ny-1..0
@@ -33,7 +35,7 @@ defmodule RaytracerEx.Scene do
             u = (x + :rand.uniform()) / scene.nx
             v = (y + :rand.uniform()) / scene.ny
             ray = Camera.get_ray(scene.camera, u, v)
-            Vec3.add(c, _color(ray, scene.objects))
+            Vec3.add(c, _color2(ray, scene.objects, 0))
           end)
           Vec3.to_list(Vec3.div(color, scene.ns)) |> Enum.map(&(:math.sqrt(&1) * 255))
         end)
@@ -54,6 +56,20 @@ defmodule RaytracerEx.Scene do
       obj = hd hit
       target = Vec3.add(Vec3.add(obj.pos, obj.normal), Ray.random_in_unit_sphere())
       Vec3.scale(_color(%Ray{pos: obj.pos, dir: Vec3.sub(target, obj.pos)}, objects), 0.5)
+    else
+      _sky(ray)
+    end
+  end
+  defp _color2(ray, objects, depth) do
+    hit = _hit(objects, ray, 0.001, 99999)
+    if hit != [] do
+      hitrec = hd hit
+      {sca, scattered, attenuation} = Material.scatter(hitrec.material, ray, hitrec)
+      if sca and depth < 50 do
+        Vec3.mult(attenuation, _color2(scattered, objects, depth+1))
+      else
+        %Vec3{}
+      end
     else
       _sky(ray)
     end
