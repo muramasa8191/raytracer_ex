@@ -53,6 +53,17 @@ defmodule RaytracerEx.Vector do
     def reflect(vec, normal) do
       Vec3.sub(vec, Vec3.mult(Vec3.scale(Vec3.dot(vec, normal), 2.0), normal))
     end
+    def refract(vec, normal, ni_over_nt) do
+      uv = Vec3.normalize(vec)
+      dt = Vec3.dot(uv, normal)
+      discriminant = 1.0 - ni_over_nt * ni_over_nt * (1.0 - dt * dt)
+      if (discriminant > 0.0) do
+        refracted = Vec3.sub(Vec3.scale(Vec3.sub(uv, Vec3.scale(normal, dt)), ni_over_nt), Vec3.scale(normal, :math.sqrt(discriminant)))
+        {true, refracted}
+      else
+        {false, nil}
+      end
+    end
   end
   defmodule Vec4 do
     defstruct x: 0.0, y: 0.0, z: 0.0, w: 0.0

@@ -23,7 +23,7 @@ defmodule RaytracerEx do
   alias RaytracerEx.Scene, as: Scene
   alias RaytracerEx.Material.Lambertian, as: Lambertian
   alias RaytracerEx.Material.Metal, as: Metal
-
+  alias RaytracerEx.Material.Dielectric, as: Dielectric
   def test(w, h) do
     _test(h, w, h, [])
   end
@@ -44,18 +44,51 @@ defmodule RaytracerEx do
     :python.call( py_exec, :image, :show, [arr] )
     :python.stop( py_exec )
   end
-  def material_test() do
-    nx = 200
-    ny = 100
-    u = %Vec3{x: 4.0, y: 0.0, z: 0.0 }
-    v = %Vec3{x: 0.0, y: 2.0, z: 0.0 }
-    w = %Vec3{x: -2.0, y: -1.0, z: -1.0 }
-    camera = %Camera{uvw: %{u: u, v: v, w: w}}
+  def camera_test2() do
+    nx = 400
+    ny = 200
+    lookfrom = Vec3.vec3([3.0, 3.0, 2.0])
+    lookat = Vec3.vec3([0.0, 0.0, -1.0])
+    dist_to_focus = Vec3.len(Vec3.sub(lookfrom, lookat))
+    aperture = 2.0
+    camera = Camera.create(lookfrom, lookat, Vec3.vec3([0.0, 1.0, 0.0]), 20.0, nx/ny, aperture, dist_to_focus)
+
     sphere = %Sphere{center: %Vec3{x: 0.0, y: 0.0, z: -1.0}, r: 0.5, material: %Lambertian{albedo: Vec3.vec3([0.8, 0.3, 0.3])}}    
     sphere2 = %Sphere{center: %Vec3{x: 0.0, y: -100.5, z: -1.0}, r: 100, material: %Lambertian{albedo: Vec3.vec3([0.8, 0.8, 0.0])}}    
     sphere3 = %Sphere{center: %Vec3{x: 1.0, y: 0.0, z: -1.0}, r: 0.5, material: %Metal{albedo: Vec3.vec3([0.8, 0.6, 0.2])}}   
-    sphere4 = %Sphere{center: %Vec3{x: -1.0, y: 0.0, z: -1.0}, r: 0.5, material: %Metal{albedo: Vec3.vec3([0.8, 0.8, 0.8]), fuzz: 0.3}}    
-    scene = Scene.create_scene(nx, ny, camera, [sphere, sphere2, sphere3, sphere4])
+    sphere4 = %Sphere{center: %Vec3{x: -1.0, y: 0.0, z: -1.0}, r: 0.5, material: %Dielectric{ri: 1.5}}
+    sphere5 = %Sphere{center: %Vec3{x: -1.0, y: 0.0, z: -1.0}, r: -0.45, material: %Dielectric{ri: 1.5}}
+    scene = Scene.create_scene(nx, ny, camera, [sphere, sphere2, sphere3, sphere4, sphere5])
+
+    Scene.render(scene)
+  end
+  def camera_test() do
+    nx = 400
+    ny = 200
+    camera = Camera.create(Vec3.vec3([-2.0, 2.0, 1.0]), Vec3.vec3([0.0, 0.0, -1.0]), Vec3.vec3([0.0, 1.0, 0.0]), 90.0, nx/ny)
+
+    sphere = %Sphere{center: %Vec3{x: 0.0, y: 0.0, z: -1.0}, r: 0.5, material: %Lambertian{albedo: Vec3.vec3([0.8, 0.3, 0.3])}}    
+    sphere2 = %Sphere{center: %Vec3{x: 0.0, y: -100.5, z: -1.0}, r: 100, material: %Lambertian{albedo: Vec3.vec3([0.8, 0.8, 0.0])}}    
+    sphere3 = %Sphere{center: %Vec3{x: 1.0, y: 0.0, z: -1.0}, r: 0.5, material: %Metal{albedo: Vec3.vec3([0.8, 0.6, 0.2])}}   
+    sphere4 = %Sphere{center: %Vec3{x: -1.0, y: 0.0, z: -1.0}, r: 0.5, material: %Dielectric{ri: 1.5}}
+    sphere5 = %Sphere{center: %Vec3{x: -1.0, y: 0.0, z: -1.0}, r: -0.45, material: %Dielectric{ri: 1.5}}
+    scene = Scene.create_scene(nx, ny, camera, [sphere, sphere2, sphere3, sphere4, sphere5])
+
+    Scene.render(scene)
+  end
+  def material_test() do
+    nx = 400
+    ny = 200
+    u = %Vec3{x: 4.0, y: 0.0, z: 0.0 }
+    v = %Vec3{x: 0.0, y: 2.0, z: 0.0 }
+    w = %Vec3{x: -2.0, y: -1.0, z: -1.0 }
+    camera = %Camera{u: u, v: v, w: w}
+    sphere = %Sphere{center: %Vec3{x: 0.0, y: 0.0, z: -1.0}, r: 0.5, material: %Lambertian{albedo: Vec3.vec3([0.8, 0.3, 0.3])}}    
+    sphere2 = %Sphere{center: %Vec3{x: 0.0, y: -100.5, z: -1.0}, r: 100, material: %Lambertian{albedo: Vec3.vec3([0.8, 0.8, 0.0])}}    
+    sphere3 = %Sphere{center: %Vec3{x: 1.0, y: 0.0, z: -1.0}, r: 0.5, material: %Metal{albedo: Vec3.vec3([0.8, 0.6, 0.2])}}   
+    sphere4 = %Sphere{center: %Vec3{x: -1.0, y: 0.0, z: -1.0}, r: 0.5, material: %Dielectric{ri: 1.5}}
+    sphere5 = %Sphere{center: %Vec3{x: -1.0, y: 0.0, z: -1.0}, r: -0.45, material: %Dielectric{ri: 1.5}}
+    scene = Scene.create_scene(nx, ny, camera, [sphere, sphere2, sphere3, sphere4, sphere5])
 
     Scene.render(scene)
   end
@@ -65,7 +98,7 @@ defmodule RaytracerEx do
     u = %Vec3{x: 4.0, y: 0.0, z: 0.0 }
     v = %Vec3{x: 0.0, y: 2.0, z: 0.0 }
     w = %Vec3{x: -2.0, y: -1.0, z: -1.0 }
-    camera = %Camera{uvw: %{u: u, v: v, w: w}}
+    camera = %Camera{u: u, v: v, w: w}
     sphere = %Sphere{center: %Vec3{x: 0.0, y: 0.0, z: -1.0}, r: 0.5}    
     sphere2 = %Sphere{center: %Vec3{x: 0.0, y: -100.5, z: -1.0}, r: 100}    
     scene = Scene.create_scene(nx, ny, camera, [sphere, sphere2])
@@ -78,7 +111,7 @@ defmodule RaytracerEx do
     u = %Vec3{x: 4.0, y: 0.0, z: 0.0 }
     v = %Vec3{x: 0.0, y: 2.0, z: 0.0 }
     w = %Vec3{x: -2.0, y: -1.0, z: -1.0 }
-    camera = %Camera{uvw: %{u: u, v: v, w: w}}
+    camera = %Camera{u: u, v: v, w: w}
     sphere = %Sphere{center: %Vec3{x: 0.0, y: 0.0, z: -1.0}, r: 0.5}    
     scene = Scene.create_scene(nx, ny, camera, [sphere])
 
@@ -90,7 +123,7 @@ defmodule RaytracerEx do
     u = %Vec3{x: 4.0, y: 0.0, z: 0.0 }
     v = %Vec3{x: 0.0, y: 2.0, z: 0.0 }
     w = %Vec3{x: -2.0, y: -1.0, z: -1.0 }
-    camera = %Camera{uvw: %{u: u, v: v, w: w}}
+    camera = %Camera{u: u, v: v, w: w}
     sphere = %Sphere{center: %Vec3{x: 0.0, y: 0.0, z: -1.0}, r: 0.5}
     img = _sphere_shadow_test(ny - 1, nx, ny, camera, sphere, [])
     show(img)
@@ -124,7 +157,7 @@ defmodule RaytracerEx do
     u = %Vec3{x: 4.0, y: 0.0, z: 0.0 }
     v = %Vec3{x: 0.0, y: 2.0, z: 0.0 }
     w = %Vec3{x: -2.0, y: -1.0, z: -1.0 }
-    camera = %Camera{uvw: %{u: u, v: v, w: w}}
+    camera = %Camera{u: u, v: v, w: w}
     sphere = %Sphere{center: %Vec3{x: 0.0, y: 0.0, z: -1.0}, r: 0.5}
     img = _sphere_loop(ny - 1, nx, ny, camera, sphere, [])
     show(img)
@@ -150,7 +183,7 @@ defmodule RaytracerEx do
     u = %Vec3{x: 4.0, y: 0.0, z: 0.0 }
     v = %Vec3{x: 0.0, y: 2.0, z: 0.0 }
     w = %Vec3{x: -2.0, y: -1.0, z: -1.0 }
-    camera = %Camera{uvw: %{u: u, v: v, w: w}}
+    camera = %Camera{u: u, v: v, w: w}
 
     img = _grad_loop(ny-1, nx, ny, camera, [])
     show(img)
