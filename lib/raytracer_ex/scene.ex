@@ -6,7 +6,7 @@ defmodule RaytracerEx.Scene do
   alias RaytracerEx.Camera, as: Camera
   alias RaytracerEx.Material, as: Material
   
-  defstruct nx: 200, ny: 100, ns: 100, camera: %Camera{}, objects: []
+  defstruct nx: 200, ny: 100, ns: 10, camera: %Camera{}, objects: []
 
   def create_scene(nx, ny, camera) do
     %Scene{nx: nx, ny: ny, camera: camera, objects: []}

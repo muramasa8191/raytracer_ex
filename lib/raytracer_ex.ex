@@ -24,19 +24,47 @@ defmodule RaytracerEx do
   alias RaytracerEx.Material.Lambertian, as: Lambertian
   alias RaytracerEx.Material.Metal, as: Metal
   alias RaytracerEx.Material.Dielectric, as: Dielectric
-  def test(w, h) do
-    _test(h, w, h, [])
-  end
-  def _test(0, _width, _height, arr) do
-    {0, arr}
-  end
-  def _test(y, width, height, arr) do
-    {_, array} = 
-    List.duplicate([], width)
-    |> Enum.reduce({0, []}, fn (_x, {idx, arr}) -> {idx + 1, [[idx / width * 255, y / height * 255, 127]]++arr} end)
 
-    _test(y - 1, width, height, [Enum.reverse(array)]++arr)
+  def sphere_world() do
+    nx = 200
+    ny = 100
+    lookfrom = Vec3.vec3([13.0, 2.0, 3.0])
+    lookat = Vec3.vec3([0.0, 0.0, 0.0])
+    dist_to_focus = Vec3.len(Vec3.sub(lookfrom, lookat))
+    IO.puts("focus = #{dist_to_focus}")
+    aperture = 0.2
+    camera = Camera.create(lookfrom, lookat, Vec3.vec3([0.0, 1.0, 0.0]), 20.0, nx/ny, aperture, dist_to_focus)
+
+    base = %Sphere{center: Vec3.vec3([0.0, -1000.0, 0.0]), r: 1000.0, material: %Lambertian{albedo: Vec3.vec3([0.5, 0.5, 0.5])}}
+    ss= 
+    for a <- -11..10, b <- -11..10 do
+      choose_mat = :rand.uniform()
+      center = Vec3.vec3([a + 0.9 * :rand.uniform(), 0.2, b + 0.9 * :rand.uniform()])
+      if Vec3.len(Vec3.sub(center, Vec3.vec3([4.0, 0.2, 0.0]))) > 0.9 do
+        if choose_mat < 0.8 do
+          %Sphere{center: center, r: 0.2, 
+                  material: %Lambertian{albedo: Vec3.vec3([:rand.uniform() * :rand.uniform(), :rand.uniform()*:rand.uniform(), :rand.uniform()*:rand.uniform()])}}
+        else
+          if choose_mat < 0.95 do
+            %Sphere{center: center, r: 0.2,
+                    material: %Metal{albedo: Vec3.vec3([0.5 * (1 + :rand.uniform()), 0.5 * (1 + :rand.uniform()), 0.5 * (1 + :rand.uniform())]), fuzz: 0.5 * :rand.uniform()}}
+          else
+            %Sphere{center: center, r: 0.2, material: %Dielectric{ri: 1.5}}
+          end
+        end
+      end
+    end
+    ss = ss |> Enum.filter(&(not is_nil(&1)))
+    objects = [base]++ss
+    objects = [%Sphere{center: Vec3.vec3([0.0, 1.0, 0.0]), r: 1.0, material: %Dielectric{ri: 1.5}}]++objects
+    objects = [%Sphere{center: Vec3.vec3([-4.0, 1.0, 0.0]), r: 1.0, material: %Lambertian{albedo: Vec3.vec3([0.4, 0.2, 0.1])}}]++objects
+    objects = [%Sphere{center: Vec3.vec3([4.0, 1.0, 0.0]), r: 1.0, material: %Metal{albedo: Vec3.vec3([0.7, 0.6, 0.5]), fuzz: 0.0}}]++objects
+
+    scene = Scene.create_scene(nx, ny, camera, objects)
+
+    Scene.render(scene)
   end
+
   def show_color(w, h, r, g, b) do
     arr = List.duplicate(List.duplicate([r, g, b], w), h)
 
