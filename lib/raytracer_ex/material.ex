@@ -5,8 +5,9 @@ defmodule RaytracerEx.Material do
   defmodule Lambertian do
     @name :lambertian
     defstruct type: @name, albedo: %Vec3{}
-    def scatter(lam, ray, hitrec) do
-      target = Vec3.add(Vec3.add(hitrec.pos, hitrec.normal), Ray.random_in_unit_sphere())
+    def scatter(lam, _ray, hitrec) do
+      target = Vec3.add(hitrec.pos, hitrec.normal) 
+               |> Vec3.add(Ray.random_in_unit_sphere())
 
       {true, %Ray{pos: hitrec.pos, dir: Vec3.sub(target, hitrec.pos)}, lam.albedo}
     end
@@ -15,8 +16,9 @@ defmodule RaytracerEx.Material do
     @name :metal
     defstruct type: @name, albedo: %Vec3{}, fuzz: 1.0
     def scatter(metal, ray, hitrec) do
-      reflected = Utils.reflect(Vec3.normalize(ray.dir), hitrec.normal)
-      scattered = %Ray{pos: hitrec.pos, dir: Vec3.add(reflected, Vec3.scale(Ray.random_in_unit_sphere(), metal.fuzz))}
+      reflected = Utils.reflect(Vec3.unit_vector(ray.dir), hitrec.normal)
+      scattered = %Ray{pos: hitrec.pos, 
+                       dir: Vec3.add(reflected, Vec3.scale(Ray.random_in_unit_sphere(), metal.fuzz))}
       {(Vec3.dot(scattered.dir, hitrec.normal) > 0.0), scattered, metal.albedo}
     end
   end
@@ -27,7 +29,7 @@ defmodule RaytracerEx.Material do
       reflected = Utils.reflect(ray.dir, hitrec.normal)
       attenuation = Vec3.ones()
       {outward_normal, ni_over_nt, cosine} = parse(diel, ray, hitrec)
-      {is_refract, refracted} = Vec3.refract(ray.dir, outward_normal, ni_over_nt)
+      {is_refract, refracted} = Utils.refract(ray.dir, outward_normal, ni_over_nt)
       reflect_prob = if is_refract, do: schlick(cosine, diel.ri), else: 1.0
       scattered = if :rand.uniform() < reflect_prob, 
                      do: %Ray{pos: hitrec.pos, dir: reflected}, else: %Ray{pos: hitrec.pos, dir: refracted}
@@ -41,8 +43,7 @@ defmodule RaytracerEx.Material do
       end
     end
     def schlick(cosine, ref_idx) do
-      r0 = (1.0 - ref_idx) / (1.0 + ref_idx)
-      r0 = r0 * r0
+      r0 = (1.0 - ref_idx) / (1.0 + ref_idx) |> :math.pow(2)
       r0 + (1.0 - r0) * :math.pow((1.0 - cosine), 5)
     end
   end

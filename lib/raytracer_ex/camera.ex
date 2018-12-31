@@ -11,29 +11,33 @@ defmodule RaytracerEx.Camera do
     half_height = :math.tan(theta * 0.5)
     half_width = aspect * half_height
     origin = lookfrom
-    w = Vec3.normalize(Vec3.sub(lookfrom, lookat))
-    u = Vec3.normalize(Vec3.cross(vup, w))
+    w = Vec3.sub(lookfrom, lookat) |> Vec3.unit_vector
+    u = Vec3.cross(vup, w) |> Vec3.unit_vector
     v = Vec3.cross(w, u)
     lower_left = Vec3.sub(Vec3.sub(Vec3.sub(origin, Vec3.scale(u, focus_dist * half_width)), 
                                    Vec3.scale(v, focus_dist * half_height)),
                           Vec3.scale(w, focus_dist))
     horizontal = Vec3.scale(u, half_width * 2.0 * focus_dist)
     vertical = Vec3.scale(v, half_height * 2.0 * focus_dist)
-    %Camera{origin: origin, horizontal: horizontal, vertical: vertical, low_left: lower_left, u: u,  v: v, w: w, lens_radius: aperture * 0.5}
+    %Camera{origin: origin, horizontal: horizontal, 
+            vertical: vertical, low_left: lower_left,
+            u: u,  v: v, w: w, lens_radius: aperture * 0.5}
   end
 
   def get_ray(camera, s, t) do
     rd = Vec3.scale(random_in_unit_disk(), camera.lens_radius)
     offset = Vec3.add(Vec3.scale(camera.u, rd.x), Vec3.scale(camera.v, rd.y))
     dir = Vec3.add(camera.low_left, Vec3.scale(camera.horizontal, s))
-    dir = Vec3.add(dir, Vec3.scale(camera.vertical, t))
-    dir = Vec3.sub(dir, camera.origin)
-    dir = Vec3.sub(dir, offset)
+          |> Vec3.add(Vec3.scale(camera.vertical, t))
+          |> Vec3.sub(camera.origin)
+          |> Vec3.sub(offset)
 
     %Ray{pos: Vec3.add(camera.origin, offset), dir: dir}
   end
   def random_in_unit_disk() do
-    p = Vec3.scale(Vec3.sub(Vec3.vec3([:rand.uniform(), :rand.uniform(), 0.0]), Vec3.vec3([1.0, 1.0, 0.0])), 2.0)
+    p = Vec3.sub(Vec3.vec3([:rand.uniform(), :rand.uniform(), 0.0]), 
+                           Vec3.vec3([1.0, 1.0, 0.0]))
+        |> Vec3.scale(2.0)
     if Vec3.dot(p, p) < 1.0, do: p, else: random_in_unit_disk()
   end
 end

@@ -1,7 +1,7 @@
 defmodule RaytracerEx.Vector do
   defmodule Vec3 do
-    alias RaytracerEx.Vector.Vec3, as: Vec3
     defstruct x: 0.0, y: 0.0, z: 0.0
+    alias RaytracerEx.Vector.Vec3, as: Vec3
     def vec3(list) when is_list(list) do
       [x | rest] = list
       [y | [z]] = rest
@@ -34,18 +34,18 @@ defmodule RaytracerEx.Vector do
     def lengthSqr(vec) do
       vec.x * vec.x + vec.y * vec.y + vec.z * vec.z
     end
-    def normalize(vec) do
+    def div(vec, scalar) do
+      %Vec3{x: vec.x / scalar, y: vec.y / scalar, z: vec.z / scalar}
+    end
+    def unit_vector(vec) do
       s = len(vec)
-      scale(vec, 1 / s)
+      Vec3.div(vec, s)
     end
     def cross(vec1, vec2) do
       x = vec1.y * vec2.z - vec1.z * vec2.y
       y = vec1.z * vec2.x - vec1.x * vec2.z
       z = vec1.x * vec2.y - vec1.y * vec2.x
       %Vec3{x: x, y: y, z: z}
-    end
-    def div(vec, scalar) do
-      %Vec3{x: vec.x / scalar, y: vec.y / scalar, z: vec.z / scalar}
     end
     def to_list(vec3) do
       [vec3.x, vec3.y, vec3.z]
@@ -54,7 +54,7 @@ defmodule RaytracerEx.Vector do
       Vec3.sub(vec, Vec3.mult(Vec3.scale(Vec3.dot(vec, normal), 2.0), normal))
     end
     def refract(vec, normal, ni_over_nt) do
-      uv = Vec3.normalize(vec)
+      uv = Vec3.unit_vector(vec)
       dt = Vec3.dot(uv, normal)
       discriminant = 1.0 - ni_over_nt * ni_over_nt * (1.0 - dt * dt)
       if (discriminant > 0.0) do
@@ -64,8 +64,5 @@ defmodule RaytracerEx.Vector do
         {false, nil}
       end
     end
-  end
-  defmodule Vec4 do
-    defstruct x: 0.0, y: 0.0, z: 0.0, w: 0.0
   end
 end
