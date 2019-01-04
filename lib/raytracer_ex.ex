@@ -24,9 +24,9 @@ defmodule RaytracerEx do
   alias RaytracerEx.Material.Metal, as: Metal
   alias RaytracerEx.Material.Dielectric, as: Dielectric
 
-  def sphere_world(type) do
-    s = NaiveDateTime.utc_now()  
+  def sphere_world(type \\ 0) do
 
+    s = NaiveDateTime.utc_now()  
     nx = 200
     ny = 100
     lookfrom = Vec3.vec3([11.0, 2.0, 3.0])
@@ -62,13 +62,14 @@ defmodule RaytracerEx do
     objects = [%Sphere{center: Vec3.vec3([4.0, 1.0, 0.0]), r: 1.0, material: %Metal{albedo: Vec3.vec3([0.7, 0.6, 0.5]), fuzz: 0.0}}]++objects
 
     scene = Scene.create_scene(nx, ny, camera, objects)
+    e = 
     if type == 0 do
       Scene.render(scene)
     else
       Scene.single_render(scene)
     end
-    e = NaiveDateTime.utc_now()
     IO.puts("render :#{NaiveDateTime.diff(e, s, :millisecond)} msec")
+
   end
 
   def camera_test2() do

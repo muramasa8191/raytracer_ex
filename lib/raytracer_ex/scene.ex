@@ -22,7 +22,6 @@ defmodule RaytracerEx.Scene do
     IO.puts("rendering start: nx=#{scene.nx}, ny=#{scene.ny}, ns=#{scene.ns}")
     img =
     scene.ny-1..0
-    |> Enum.to_list
     |> Flow.from_enumerable(max_demand: 4)
     |> Flow.map(fn y->
       row = 
@@ -43,9 +42,11 @@ defmodule RaytracerEx.Scene do
       end)
     |> Enum.sort(&(elem(&1, 0) > elem(&2, 0)))
     |> Enum.map(&elem(&1, 1))
+    e = NaiveDateTime.utc_now()
     { :ok, py_exec } = :python.start( [ python_path: 'lib' ] )
     :python.call( py_exec, :image, :show, [img] )
     :python.stop( py_exec )
+    e
   end
 
   def single_render(scene) do
@@ -67,9 +68,11 @@ defmodule RaytracerEx.Scene do
       IO.puts("#{scene.ny - y} / #{scene.ny} done")
       row
     end
+    e = NaiveDateTime.utc_now()
     { :ok, py_exec } = :python.start( [ python_path: 'lib' ] )
     :python.call( py_exec, :image, :show, [img] )
     :python.stop( py_exec )
+    e
   end
   # defp _color(ray, objects) do
   #   hit = _hit(objects, ray, 0.0001, 99999)
